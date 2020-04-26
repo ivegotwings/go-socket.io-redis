@@ -6,8 +6,8 @@ import (
     "github.com/googollee/go-socket.io"
     "github.com/garyburd/redigo/redis"
     "github.com/nu7hatch/gouuid"
-    "github.com/satyakb/go-socket.io-redis/cmap_string_cmap"
-    "github.com/satyakb/go-socket.io-redis/cmap_string_socket"
+    "github.com/ivegotwings/go-socket.io-redis/cmap_string_cmap"
+    "github.com/ivegotwings/go-socket.io-redis/cmap_string_socket"
     // "github.com/vmihailenco/msgpack"  // screwed up types after decoding
     "encoding/json"
 )
