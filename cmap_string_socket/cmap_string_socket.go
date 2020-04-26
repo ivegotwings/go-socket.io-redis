@@ -4,18 +4,19 @@ import (
 	"encoding/json"
 	"hash/fnv"
 	"sync"
-	"github.com/googollee/go-socket.io"
+
+	socketio "github.com/googollee/go-socket.io"
 )
 
 var SHARD_COUNT = 32
 
 // TODO: Add Keys function which returns an array of keys for the map.
 
-// A "thread" safe map of type string:socketio.Socket.
+// A "thread" safe map of type string:socketio.Conn.
 // To avoid lock bottlenecks this map is dived to several (SHARD_COUNT) map shards.
 type ConcurrentMap []*ConcurrentMapShared
 type ConcurrentMapShared struct {
-	items        map[string]socketio.Socket
+	items        map[string]socketio.Conn
 	sync.RWMutex // Read Write mutex, guards access to internal map.
 }
 
@@ -23,7 +24,7 @@ type ConcurrentMapShared struct {
 func New() ConcurrentMap {
 	m := make(ConcurrentMap, SHARD_COUNT)
 	for i := 0; i < SHARD_COUNT; i++ {
-		m[i] = &ConcurrentMapShared{items: make(map[string]socketio.Socket)}
+		m[i] = &ConcurrentMapShared{items: make(map[string]socketio.Conn)}
 	}
 	return m
 }
@@ -36,7 +37,7 @@ func (m ConcurrentMap) GetShard(key string) *ConcurrentMapShared {
 }
 
 // Sets the given value under the specified key.
-func (m *ConcurrentMap) Set(key string, value socketio.Socket) {
+func (m *ConcurrentMap) Set(key string, value socketio.Conn) {
 	// Get map shard.
 	shard := m.GetShard(key)
 	shard.Lock()
@@ -45,7 +46,7 @@ func (m *ConcurrentMap) Set(key string, value socketio.Socket) {
 }
 
 // Retrieves an element from map under given key.
-func (m ConcurrentMap) Get(key string) (socketio.Socket, bool) {
+func (m ConcurrentMap) Get(key string) (socketio.Conn, bool) {
 	// Get shard
 	shard := m.GetShard(key)
 	shard.RLock()
@@ -97,7 +98,7 @@ func (m *ConcurrentMap) IsEmpty() bool {
 // Used by the Iter & IterBuffered functions to wrap two variables together over a channel,
 type Tuple struct {
 	Key string
-	Val socketio.Socket
+	Val socketio.Conn
 }
 
 // Returns an iterator which could be used in a for range loop.
@@ -139,7 +140,7 @@ func (m ConcurrentMap) IterBuffered() <-chan Tuple {
 //Reviles ConcurrentMap "private" variables to json marshal.
 func (m ConcurrentMap) MarshalJSON() ([]byte, error) {
 	// Create a temporary map, which will hold all item spread across shards.
-	tmp := make(map[string]socketio.Socket)
+	tmp := make(map[string]socketio.Conn)
 
 	// Insert items to temporary map.
 	for item := range m.Iter() {
@@ -151,7 +152,7 @@ func (m ConcurrentMap) MarshalJSON() ([]byte, error) {
 func (m *ConcurrentMap) UnmarshalJSON(b []byte) (err error) {
 	// Reverse process of Marshal.
 
-	tmp := make(map[string]socketio.Socket)
+	tmp := make(map[string]socketio.Conn)
 
 	// Unmarshal into a single map.
 	if err := json.Unmarshal(b, &tmp); err != nil {
